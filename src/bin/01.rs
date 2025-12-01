@@ -6,11 +6,7 @@ fn parse_input(input: &str) -> Vec<(char, i32)> {
         .map(|line| {
             (
                 line.chars().next().unwrap(),
-                line.chars()
-                    .skip(1)
-                    .collect::<String>()
-                    .parse::<i32>()
-                    .unwrap(),
+                line[1..].parse::<i32>().unwrap(),
             )
         })
         .collect()
