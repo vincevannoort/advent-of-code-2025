@@ -1,6 +1,6 @@
-use std::{cmp::max as max_cmp, option};
+use std::cmp::max as max_cmp;
 
-use itertools::{Itertools, max as max_iter};
+use itertools::Itertools;
 
 advent_of_code::solution!(3);
 
