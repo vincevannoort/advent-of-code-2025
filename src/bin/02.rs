@@ -1,5 +1,3 @@
-use std::collections::BTreeMap;
-
 use itertools::Itertools;
 
 advent_of_code::solution!(2);
