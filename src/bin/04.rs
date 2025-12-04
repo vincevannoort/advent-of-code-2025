@@ -30,6 +30,8 @@ pub fn find_accessible_papers(grid: &Grid<char>) -> Vec<(&Location, &char)> {
         .iter()
         .filter(|(_, c)| **c == '@')
         .filter(|(l, _)| {
+            // TODO: this I think is really slow because we keep calculating it over and over and creating new vectors every time
+            // it should really return references of locations instead
             let adjacent_location = grid.get_adjacent_locations(l);
             adjacent_location.iter().filter(|(_, c)| **c == '@').count() < 4
         })
