@@ -180,44 +180,66 @@ where
     pub fn get_optional_surrounding_locations(
         &self,
         current_position: &Location,
+        include_diagonals: bool,
     ) -> Vec<Option<(Location, &T)>> {
         let max_location = self.max_location();
 
-        vec![
-            // top
-            (0_i32, -1_i32),
-            // right
-            (1_i32, 0_i32),
-            // bottom
-            (0_i32, 1_i32),
-            // left
-            (-1_i32, 0_i32),
-        ]
-        .into_iter()
-        .map(|(x, y)| {
-            let x = current_position.x as i32 + x;
-            let y = current_position.y as i32 + y;
+        // locations (y, x)
+        let surroundings = if include_diagonals {
+            vec![
+                (0_i32, -1_i32),
+                (1_i32, -1_i32),
+                (1_i32, 0_i32),
+                (1_i32, 1_i32),
+                (0_i32, 1_i32),
+                (-1_i32, 1_i32),
+                (-1_i32, 0_i32),
+                (-1_i32, -1_i32),
+            ]
+        } else {
+            vec![
+                (0_i32, -1_i32),
+                (1_i32, 0_i32),
+                (0_i32, 1_i32),
+                (-1_i32, 0_i32),
+            ]
+        };
 
-            // skip out of bounds
-            if x < 0 || y < 0 || x as u32 > max_location.x || y as u32 > max_location.y {
-                return None;
-            }
+        surroundings
+            .into_iter()
+            .map(|(x, y)| {
+                let x = current_position.x as i32 + x;
+                let y = current_position.y as i32 + y;
 
-            self.get(x as u32, y as u32).map(|value| {
-                (
-                    Location {
-                        x: x as u32,
-                        y: y as u32,
-                    },
-                    value,
-                )
+                // skip out of bounds
+                if x < 0 || y < 0 || x as u32 > max_location.x || y as u32 > max_location.y {
+                    return None;
+                }
+
+                self.get(x as u32, y as u32).map(|value| {
+                    (
+                        Location {
+                            x: x as u32,
+                            y: y as u32,
+                        },
+                        value,
+                    )
+                })
             })
-        })
-        .collect_vec()
+            .collect_vec()
     }
 
+    // without diagonals
     pub fn get_surrounding_locations(&self, current_position: &Location) -> Vec<(Location, &T)> {
-        self.get_optional_surrounding_locations(current_position)
+        self.get_optional_surrounding_locations(current_position, false)
+            .into_iter()
+            .flatten()
+            .collect_vec()
+    }
+
+    // with diagonals
+    pub fn get_adjacent_locations(&self, current_position: &Location) -> Vec<(Location, &T)> {
+        self.get_optional_surrounding_locations(current_position, true)
             .into_iter()
             .flatten()
             .collect_vec()
