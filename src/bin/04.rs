@@ -25,25 +25,45 @@ fn parse(input: &str) -> Grid<char> {
     }
 }
 
-pub fn part_one(input: &str) -> Option<u64> {
-    let grid = parse(input);
-    dbg!(grid.get_adjacent_locations(&Location { x: 1, y: 1 }));
-
-    let accessible_papers = grid
-        .locations
+pub fn find_accessible_papers(grid: &Grid<char>) -> Vec<(&Location, &char)> {
+    grid.locations
         .iter()
         .filter(|(_, c)| **c == '@')
         .filter(|(l, _)| {
             let adjacent_location = grid.get_adjacent_locations(l);
             adjacent_location.iter().filter(|(_, c)| **c == '@').count() < 4
         })
-        .collect_vec();
+        .collect_vec()
+}
 
+pub fn part_one(input: &str) -> Option<u64> {
+    let grid = parse(input);
+    let accessible_papers = find_accessible_papers(&grid);
     Some(accessible_papers.len().try_into().unwrap())
 }
 
 pub fn part_two(input: &str) -> Option<u64> {
-    None
+    let mut grid = parse(input);
+    let mut count = 0;
+
+    loop {
+        let accessible_papers = find_accessible_papers(&grid)
+            .into_iter()
+            .map(|(l, _)| *l)
+            .collect_vec();
+
+        if accessible_papers.is_empty() {
+            break;
+        }
+
+        count += accessible_papers.len();
+
+        for accessible_paper in accessible_papers {
+            grid.locations.insert(accessible_paper, 'x');
+        }
+    }
+
+    Some(count.try_into().unwrap())
 }
 
 #[cfg(test)]
@@ -53,12 +73,12 @@ mod tests {
     #[test]
     fn test_part_one() {
         let result = part_one(&advent_of_code::template::read_file("examples", DAY));
-        assert_eq!(result, None);
+        assert_eq!(result, Some(13));
     }
 
     #[test]
     fn test_part_two() {
         let result = part_two(&advent_of_code::template::read_file("examples", DAY));
-        assert_eq!(result, None);
+        assert_eq!(result, Some(43));
     }
 }
