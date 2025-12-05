@@ -31,7 +31,36 @@ pub fn part_one(input: &str) -> Option<u64> {
 }
 
 pub fn part_two(input: &str) -> Option<u64> {
-    None
+    let (ranges, _) = parse(input);
+    let sorted_ranges = ranges
+        .into_iter()
+        .sorted_by_key(|r| (*r.start(), *r.end()))
+        .collect_vec();
+
+    let merged_ranges: Vec<RangeInclusive<u64>> = sorted_ranges
+        .into_iter()
+        .coalesce(|left, right| {
+            // fully contained
+            if left.contains(right.start()) && left.contains(right.end()) {
+                Ok(RangeInclusive::new(*left.start(), *left.end()))
+            }
+            // partly overlapping
+            else if left.contains(right.start()) || left.contains(right.end()) {
+                Ok(RangeInclusive::new(*left.start(), *right.end()))
+            }
+            // no overlap
+            else {
+                Err((left, right))
+            }
+        })
+        .collect_vec();
+
+    Some(
+        merged_ranges
+            .into_iter()
+            .map(|range| std::convert::TryInto::<u64>::try_into(range.count()).unwrap())
+            .sum(),
+    )
 }
 
 #[cfg(test)]
@@ -42,6 +71,21 @@ mod tests {
     fn test_part_one() {
         let result = part_one(&advent_of_code::template::read_file("examples", DAY));
         assert_eq!(result, Some(3));
+    }
+
+    #[test]
+    fn example1() {
+        assert_eq!(part_two("3-5\n5-10\n\n"), Some(8));
+    }
+
+    #[test]
+    fn example2() {
+        assert_eq!(part_two("3-10\n5-7\n\n"), Some(8));
+    }
+
+    #[test]
+    fn example3() {
+        assert_eq!(part_two("3-8\n3-10\n\n"), Some(8));
     }
 
     #[test]
