@@ -55,6 +55,7 @@ pub fn part_one(input: &str) -> Option<u64> {
     )
 }
 
+// TODO: this could be written a bit neater
 fn parse_part_two(input: &str) -> Vec<(char, Vec<u64>)> {
     // transpose all numbers
     let inputs = transpose(
