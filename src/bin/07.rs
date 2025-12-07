@@ -26,18 +26,24 @@ fn parse(input: &str) -> Grid<char> {
     }
 }
 
+fn get_beams(grid: &Grid<char>) -> Vec<(Location, char)> {
+    grid.locations
+        .iter()
+        .filter(|(_, c)| **c == '|')
+        .map(|(l, c)| (*l, *c))
+        .collect_vec()
+}
+
+fn count_beams(grid: &Grid<char>) -> usize {
+    grid.locations.iter().filter(|(_, c)| **c == '|').count()
+}
+
 pub fn part_one(input: &str) -> Option<u64> {
     let mut grid = parse(input);
     let mut splits: HashSet<Location> = HashSet::new();
     loop {
-        let beams_before = grid.locations.iter().filter(|(_, c)| **c == '|').count();
-        let beams = grid
-            .locations
-            .iter()
-            .filter(|(_, c)| **c == '|')
-            // TODO: can I do this differently
-            .map(|(l, c)| (*l, *c))
-            .collect_vec();
+        let beams_before = count_beams(&grid);
+        let beams = get_beams(&grid);
 
         for (l, _) in beams {
             if let Some((down, c)) = grid.get_by_direction(&l, advent_of_code::Direction::Down) {
@@ -63,8 +69,7 @@ pub fn part_one(input: &str) -> Option<u64> {
             }
         }
 
-        let beams_after = grid.locations.iter().filter(|(_, c)| **c == '|').count();
-
+        let beams_after = count_beams(&grid);
         if beams_before == beams_after {
             break;
         }
@@ -73,7 +78,65 @@ pub fn part_one(input: &str) -> Option<u64> {
 }
 
 pub fn part_two(input: &str) -> Option<u64> {
-    None
+    let mut grid = parse(input);
+    let mut options: u64 = 0;
+    let mut next_beams: HashMap<Location, u64> = HashMap::new();
+    next_beams.insert(
+        *grid.locations.iter().find(|(_, c)| **c == '|').unwrap().0,
+        1,
+    );
+
+    loop {
+        let mut next_next_beams: HashMap<Location, u64> = HashMap::new();
+
+        // TODO: make this neater
+        for (beam, count) in next_beams.clone() {
+            if let Some((down, c)) = grid.get_by_direction(&beam, advent_of_code::Direction::Down) {
+                match c {
+                    '.' => {
+                        next_next_beams
+                            .entry(down)
+                            .and_modify(|counter| *counter += count)
+                            .or_insert(count);
+                    }
+                    '^' => {
+                        if let Some((left, _)) =
+                            grid.get_by_direction(&down, advent_of_code::Direction::Left)
+                        {
+                            next_next_beams
+                                .entry(left)
+                                .and_modify(|counter| *counter += count)
+                                .or_insert(count);
+                        };
+                        if let Some((right, _)) =
+                            grid.get_by_direction(&down, advent_of_code::Direction::Right)
+                        {
+                            next_next_beams
+                                .entry(right)
+                                .and_modify(|counter| *counter += count)
+                                .or_insert(count);
+                        };
+                    }
+                    '|' => (),
+                    _ => panic!("unknown"),
+                };
+            } else {
+                options += count;
+            }
+        }
+
+        for (beam, count) in next_next_beams.clone() {
+            grid.locations
+                .insert(beam, count.to_string().chars().last().unwrap());
+        }
+
+        if next_next_beams.is_empty() {
+            break;
+        }
+
+        next_beams = next_next_beams;
+    }
+    Some(options)
 }
 
 #[cfg(test)]
@@ -87,8 +150,32 @@ mod tests {
     }
 
     #[test]
+    fn test_six_layers() {
+        let result = part_two(&advent_of_code::template::read_file_part(
+            "examples", DAY, 6,
+        ));
+        assert_eq!(result, Some(4));
+    }
+
+    #[test]
+    fn test_eight_layers() {
+        let result = part_two(&advent_of_code::template::read_file_part(
+            "examples", DAY, 8,
+        ));
+        assert_eq!(result, Some(8));
+    }
+
+    #[test]
+    fn test_ten_layers() {
+        let result = part_two(&advent_of_code::template::read_file_part(
+            "examples", DAY, 10,
+        ));
+        assert_eq!(result, Some(13));
+    }
+
+    #[test]
     fn test_part_two() {
         let result = part_two(&advent_of_code::template::read_file("examples", DAY));
-        assert_eq!(result, None);
+        assert_eq!(result, Some(40));
     }
 }
