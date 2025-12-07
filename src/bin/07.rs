@@ -1,7 +1,7 @@
 use core::panic;
 use std::collections::{HashMap, HashSet};
 
-use advent_of_code::{Grid, Location};
+use advent_of_code::{Direction, Grid, Location};
 use itertools::Itertools;
 
 advent_of_code::solution!(7);
@@ -41,24 +41,21 @@ fn count_beams(grid: &Grid<char>) -> usize {
 pub fn part_one(input: &str) -> Option<u64> {
     let mut grid = parse(input);
     let mut splits: HashSet<Location> = HashSet::new();
+
     loop {
         let beams_before = count_beams(&grid);
         let beams = get_beams(&grid);
 
         for (l, _) in beams {
-            if let Some((down, c)) = grid.get_by_direction(&l, advent_of_code::Direction::Down) {
+            if let Some((down, c)) = grid.get_by_direction(&l, Direction::Down) {
                 match c {
                     '.' => grid.locations.insert(down, '|'),
                     '^' => {
                         splits.insert(down);
-                        if let Some((left, _)) =
-                            grid.get_by_direction(&down, advent_of_code::Direction::Left)
-                        {
+                        if let Some((left, _)) = grid.get_by_direction(&down, Direction::Left) {
                             grid.locations.insert(left, '|');
                         };
-                        if let Some((right, _)) =
-                            grid.get_by_direction(&down, advent_of_code::Direction::Right)
-                        {
+                        if let Some((right, _)) = grid.get_by_direction(&down, Direction::Right) {
                             grid.locations.insert(right, '|');
                         };
                         None
@@ -77,44 +74,35 @@ pub fn part_one(input: &str) -> Option<u64> {
     Some(splits.len().try_into().unwrap())
 }
 
+fn update_count(beams: &mut HashMap<Location, u64>, location: Location, count: u64) {
+    beams
+        .entry(location)
+        .and_modify(|counter| *counter += count)
+        .or_insert(count);
+}
+
 pub fn part_two(input: &str) -> Option<u64> {
     let mut grid = parse(input);
     let mut options: u64 = 0;
-    let mut next_beams: HashMap<Location, u64> = HashMap::new();
-    next_beams.insert(
+    let mut beams: HashMap<Location, u64> = HashMap::new();
+    beams.insert(
         *grid.locations.iter().find(|(_, c)| **c == '|').unwrap().0,
         1,
     );
 
     loop {
-        let mut next_next_beams: HashMap<Location, u64> = HashMap::new();
+        let mut next_beams: HashMap<Location, u64> = HashMap::new();
 
-        // TODO: make this neater
-        for (beam, count) in next_beams.clone() {
-            if let Some((down, c)) = grid.get_by_direction(&beam, advent_of_code::Direction::Down) {
+        for (beam, count) in beams.clone() {
+            if let Some((down, c)) = grid.get_by_direction(&beam, Direction::Down) {
                 match c {
-                    '.' => {
-                        next_next_beams
-                            .entry(down)
-                            .and_modify(|counter| *counter += count)
-                            .or_insert(count);
-                    }
+                    '.' => update_count(&mut next_beams, down, count),
                     '^' => {
-                        if let Some((left, _)) =
-                            grid.get_by_direction(&down, advent_of_code::Direction::Left)
-                        {
-                            next_next_beams
-                                .entry(left)
-                                .and_modify(|counter| *counter += count)
-                                .or_insert(count);
+                        if let Some((left, _)) = grid.get_by_direction(&down, Direction::Left) {
+                            update_count(&mut next_beams, left, count);
                         };
-                        if let Some((right, _)) =
-                            grid.get_by_direction(&down, advent_of_code::Direction::Right)
-                        {
-                            next_next_beams
-                                .entry(right)
-                                .and_modify(|counter| *counter += count)
-                                .or_insert(count);
+                        if let Some((right, _)) = grid.get_by_direction(&down, Direction::Right) {
+                            update_count(&mut next_beams, right, count);
                         };
                     }
                     '|' => (),
@@ -125,16 +113,16 @@ pub fn part_two(input: &str) -> Option<u64> {
             }
         }
 
-        for (beam, count) in next_next_beams.clone() {
+        for (beam, count) in next_beams.clone() {
             grid.locations
                 .insert(beam, count.to_string().chars().last().unwrap());
         }
 
-        if next_next_beams.is_empty() {
+        if next_beams.is_empty() {
             break;
         }
 
-        next_beams = next_next_beams;
+        beams = next_beams;
     }
     Some(options)
 }
