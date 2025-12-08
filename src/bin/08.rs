@@ -47,39 +47,29 @@ fn update_circuits_with_connection(
     a: &(i32, i32, i32),
     b: &(i32, i32, i32),
 ) {
-    let connected_circuits = circuits
-        .iter_mut()
-        .enumerate()
-        .filter(|(_, circuit)| circuit.contains(a) || circuit.contains(b))
-        .map(|(index, _)| index)
-        .collect_vec();
+    let index_a = circuits.iter().position(|c| c.contains(a));
+    let index_b = circuits.iter().position(|c| c.contains(b));
 
-    // create a new circuit
-    if connected_circuits.is_empty() {
-        let new_circuit = HashSet::from_iter(vec![*a, *b]);
-        circuits.push(new_circuit);
-        return;
-    }
-
-    // extend existing circuit
-    let first_circuit_index = *connected_circuits.first().unwrap();
-    if connected_circuits.len() == 1 {
-        let circuit = circuits.get_mut(first_circuit_index).unwrap();
-        circuit.insert(*a);
-        circuit.insert(*b);
-        return;
-    }
-
-    // combine circuits
-    let second_circuit_index = *connected_circuits.last().unwrap();
-    if connected_circuits.len() == 2 {
-        let first_circuit = circuits.get(first_circuit_index).cloned().unwrap();
-        let second_circuit = circuits.get(second_circuit_index).cloned().unwrap();
-        circuits.retain(|circuit| *circuit != first_circuit && *circuit != second_circuit);
-        let mut combined_circuit: HashSet<(i32, i32, i32)> = HashSet::new();
-        combined_circuit.extend(&first_circuit);
-        combined_circuit.extend(&second_circuit);
-        circuits.push(combined_circuit);
+    match (index_a, index_b) {
+        // create new circuit
+        (None, None) => {
+            circuits.push(HashSet::from([*a, *b]));
+        }
+        // extend circuits
+        (Some(i), None) => {
+            circuits[i].insert(*b);
+        }
+        (None, Some(j)) => {
+            circuits[j].insert(*a);
+        }
+        // same circuit
+        (Some(i), Some(j)) if i == j => {}
+        // combine circuits
+        (Some(i), Some(j)) => {
+            let second_circuit = circuits.remove(i.max(j));
+            let first_circuit = circuits.get_mut(i.min(j)).unwrap();
+            first_circuit.extend(second_circuit);
+        }
     }
 }
 
