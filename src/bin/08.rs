@@ -1,6 +1,6 @@
 use itertools::Itertools;
 use ordered_float::OrderedFloat;
-use std::{collections::HashSet, hash::Hash};
+use std::{collections::HashSet, hash::Hash, ops::ControlFlow};
 
 advent_of_code::solution!(8);
 
@@ -51,44 +51,10 @@ pub fn part_one(input: &str) -> Option<u64> {
     };
 
     let shortest_connections = find_closest_pairs(&junction_boxes, pairs);
-
     let mut circuits: Vec<HashSet<(i32, i32, i32)>> = vec![];
 
     for (a, b, _) in shortest_connections {
-        let connected_circuits = circuits
-            .iter_mut()
-            .enumerate()
-            .filter(|(_, circuit)| circuit.contains(a) || circuit.contains(b))
-            .map(|(index, _)| index)
-            .collect_vec();
-
-        // create a new circuit
-        if connected_circuits.is_empty() {
-            let new_circuit = HashSet::from_iter(vec![*a, *b].into_iter());
-            circuits.push(new_circuit);
-            continue;
-        }
-
-        // extend existing circuit
-        let first_circuit_index = *connected_circuits.first().unwrap();
-        if connected_circuits.len() == 1 {
-            let circuit = circuits.get_mut(first_circuit_index).unwrap();
-            circuit.insert(*a);
-            circuit.insert(*b);
-            continue;
-        }
-
-        // combine circuits
-        let second_circuit_index = *connected_circuits.last().unwrap();
-        if connected_circuits.len() == 2 {
-            let first_circuit = circuits.get(first_circuit_index).cloned().unwrap();
-            let second_circuit = circuits.get(second_circuit_index).cloned().unwrap();
-            circuits.retain(|circuit| *circuit != first_circuit && *circuit != second_circuit);
-            let mut combined_circuit: HashSet<(i32, i32, i32)> = HashSet::new();
-            combined_circuit.extend(&first_circuit);
-            combined_circuit.extend(&second_circuit);
-            circuits.push(combined_circuit);
-        }
+        update_circuits_with_connection(&mut circuits, a, b);
     }
 
     let largest_circuits = circuits
@@ -107,8 +73,61 @@ pub fn part_one(input: &str) -> Option<u64> {
     Some(result.try_into().unwrap())
 }
 
+fn update_circuits_with_connection(
+    circuits: &mut Vec<HashSet<(i32, i32, i32)>>,
+    a: &(i32, i32, i32),
+    b: &(i32, i32, i32),
+) {
+    let connected_circuits = circuits
+        .iter_mut()
+        .enumerate()
+        .filter(|(_, circuit)| circuit.contains(a) || circuit.contains(b))
+        .map(|(index, _)| index)
+        .collect_vec();
+
+    // create a new circuit
+    if connected_circuits.is_empty() {
+        let new_circuit = HashSet::from_iter(vec![*a, *b]);
+        circuits.push(new_circuit);
+        return;
+    }
+
+    // extend existing circuit
+    let first_circuit_index = *connected_circuits.first().unwrap();
+    if connected_circuits.len() == 1 {
+        let circuit = circuits.get_mut(first_circuit_index).unwrap();
+        circuit.insert(*a);
+        circuit.insert(*b);
+        return;
+    }
+
+    // combine circuits
+    let second_circuit_index = *connected_circuits.last().unwrap();
+    if connected_circuits.len() == 2 {
+        let first_circuit = circuits.get(first_circuit_index).cloned().unwrap();
+        let second_circuit = circuits.get(second_circuit_index).cloned().unwrap();
+        circuits.retain(|circuit| *circuit != first_circuit && *circuit != second_circuit);
+        let mut combined_circuit: HashSet<(i32, i32, i32)> = HashSet::new();
+        combined_circuit.extend(&first_circuit);
+        combined_circuit.extend(&second_circuit);
+        circuits.push(combined_circuit);
+    }
+}
+
 pub fn part_two(input: &str) -> Option<u64> {
-    None
+    let junction_boxes = parse(input);
+
+    let shortest_connections = find_closest_pairs(&junction_boxes, usize::MAX);
+    let mut circuits: Vec<HashSet<(i32, i32, i32)>> = vec![];
+
+    for (a, b, _) in shortest_connections {
+        update_circuits_with_connection(&mut circuits, a, b);
+        if circuits.len() == 1 && circuits.first().unwrap().len() == junction_boxes.len() {
+            return Some(a.0 as u64 * b.0 as u64);
+        }
+    }
+
+    panic!("did not complete to one big circuit")
 }
 
 #[cfg(test)]
@@ -139,6 +158,6 @@ mod tests {
     #[test]
     fn test_part_two() {
         let result = part_two(&advent_of_code::template::read_file("examples", DAY));
-        assert_eq!(result, None);
+        assert_eq!(result, Some(25272));
     }
 }
