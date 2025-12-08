@@ -42,37 +42,6 @@ fn find_closest_pairs(
         .collect_vec()
 }
 
-pub fn part_one(input: &str) -> Option<u64> {
-    let junction_boxes = parse(input);
-    let pairs = if junction_boxes.len() == 1000 {
-        1000
-    } else {
-        10
-    };
-
-    let shortest_connections = find_closest_pairs(&junction_boxes, pairs);
-    let mut circuits: Vec<HashSet<(i32, i32, i32)>> = vec![];
-
-    for (a, b, _) in shortest_connections {
-        update_circuits_with_connection(&mut circuits, a, b);
-    }
-
-    let largest_circuits = circuits
-        .iter()
-        .map(|circuit| circuit.len())
-        .sorted()
-        .rev()
-        .collect_vec();
-
-    let result = largest_circuits
-        .into_iter()
-        .take(3)
-        .reduce(|acc, val| acc * val)
-        .unwrap();
-
-    Some(result.try_into().unwrap())
-}
-
 fn update_circuits_with_connection(
     circuits: &mut Vec<HashSet<(i32, i32, i32)>>,
     a: &(i32, i32, i32),
@@ -112,6 +81,37 @@ fn update_circuits_with_connection(
         combined_circuit.extend(&second_circuit);
         circuits.push(combined_circuit);
     }
+}
+
+pub fn part_one(input: &str) -> Option<u64> {
+    let junction_boxes = parse(input);
+    let pairs = if junction_boxes.len() == 1000 {
+        1000
+    } else {
+        10
+    };
+
+    let shortest_connections = find_closest_pairs(&junction_boxes, pairs);
+    let mut circuits: Vec<HashSet<(i32, i32, i32)>> = vec![];
+
+    for (a, b, _) in shortest_connections {
+        update_circuits_with_connection(&mut circuits, a, b);
+    }
+
+    let largest_circuits = circuits
+        .iter()
+        .map(|circuit| circuit.len())
+        .sorted()
+        .rev()
+        .collect_vec();
+
+    let result = largest_circuits
+        .into_iter()
+        .take(3)
+        .reduce(|acc, val| acc * val)
+        .unwrap();
+
+    Some(result.try_into().unwrap())
 }
 
 pub fn part_two(input: &str) -> Option<u64> {
