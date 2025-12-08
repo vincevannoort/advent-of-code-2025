@@ -27,7 +27,7 @@ fn euclidean_distance_3d(p1: (i32, i32, i32), p2: (i32, i32, i32)) -> f64 {
 
 fn find_closest_pairs(
     junction_boxes: &Vec<(i32, i32, i32)>,
-    paris: usize,
+    pairs: usize,
 ) -> Vec<(&(i32, i32, i32), &(i32, i32, i32), f64)> {
     junction_boxes
         .iter()
@@ -38,7 +38,7 @@ fn find_closest_pairs(
             (a, b, euclidean_distance_3d(*a, *b))
         })
         .sorted_by_key(|(_, _, distance)| OrderedFloat(*distance))
-        .take(paris)
+        .take(pairs)
         .collect_vec()
 }
 
