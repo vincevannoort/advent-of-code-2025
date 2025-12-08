@@ -75,10 +75,9 @@ fn update_circuits_with_connection(
 
 pub fn part_one(input: &str) -> Option<u64> {
     let junction_boxes = parse(input);
-    let pairs = if junction_boxes.len() == 1000 {
-        1000
-    } else {
-        10
+    let pairs = match junction_boxes.len() {
+        1000 => 1000,
+        _ => 10,
     };
 
     let shortest_connections = find_closest_pairs(&junction_boxes, pairs);
@@ -88,18 +87,7 @@ pub fn part_one(input: &str) -> Option<u64> {
         update_circuits_with_connection(&mut circuits, a, b);
     }
 
-    let largest_circuits = circuits
-        .iter()
-        .map(|circuit| circuit.len())
-        .sorted()
-        .rev()
-        .collect_vec();
-
-    let result = largest_circuits
-        .into_iter()
-        .take(3)
-        .reduce(|acc, val| acc * val)
-        .unwrap();
+    let result: usize = circuits.iter().map(|c| c.len()).k_largest(3).product();
 
     Some(result.try_into().unwrap())
 }
