@@ -1,4 +1,4 @@
-use advent_of_code::{Grid, Location};
+use advent_of_code::Location;
 use itertools::Itertools;
 
 advent_of_code::solution!(9);
@@ -37,7 +37,35 @@ pub fn part_one(input: &str) -> Option<u64> {
 }
 
 pub fn part_two(input: &str) -> Option<u64> {
-    None
+    let red_tiles = parse(input);
+    Some(
+        red_tiles
+            .into_iter()
+            .combinations(3)
+            // TODO: problem not always within loop, do I need to calculate the actual loop?
+            .filter_map(|locations| {
+                let a = locations.first().unwrap();
+                let b = locations.get(1).unwrap();
+                let c = locations.last().unwrap();
+
+                // a is corner of b and c
+                if a.x == b.x && a.y == c.y || a.y == b.y && a.x == c.x {
+                    return Some(calculate_area(b, c));
+                }
+                // b is corner of a and c
+                if b.x == a.x && b.y == c.y || b.y == a.y && b.x == c.x {
+                    return Some(calculate_area(a, c));
+                }
+                // c is corner of a and b
+                if c.x == a.x && c.y == b.y || c.y == a.y && c.x == b.x {
+                    return Some(calculate_area(a, b));
+                }
+
+                None
+            })
+            .max()
+            .unwrap(),
+    )
 }
 
 #[cfg(test)]
@@ -65,6 +93,6 @@ mod tests {
     #[test]
     fn test_part_two() {
         let result = part_two(&advent_of_code::template::read_file("examples", DAY));
-        assert_eq!(result, None);
+        assert_eq!(result, Some(24));
     }
 }
