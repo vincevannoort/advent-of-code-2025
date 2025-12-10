@@ -5,7 +5,7 @@ advent_of_code::solution!(10);
 #[derive(Debug)]
 struct Machine {
     lights: Vec<char>,
-    buttons: Vec<Vec<u16>>,
+    buttons: Vec<Vec<usize>>,
 }
 
 fn parse(input: &str) -> Vec<Machine> {
@@ -41,10 +41,43 @@ fn parse(input: &str) -> Vec<Machine> {
     machines
 }
 
+fn toggle_buttons_matches_light_goal(light: &Vec<char>, buttons: &Vec<&Vec<usize>>) -> bool {
+    let goal: Vec<bool> = light.iter().map(|c| *c == '#').collect_vec();
+    let mut start: Vec<bool> = light.iter().map(|c| false).collect_vec();
+    for button in buttons {
+        for number in button.iter() {
+            start[*number] = !start[*number]
+        }
+    }
+    goal == start
+}
+
 pub fn part_one(input: &str) -> Option<u64> {
-    let inputs = parse(input);
-    dbg!(inputs);
-    None
+    let machines = parse(input);
+    Some(
+        machines
+            .iter()
+            .map(|machine| {
+                let mut presses = 1;
+                loop {
+                    let combination =
+                        machine
+                            .buttons
+                            .iter()
+                            .combinations(presses)
+                            .find(|buttons| {
+                                toggle_buttons_matches_light_goal(&machine.lights, buttons)
+                            });
+
+                    if let Some(combination) = combination {
+                        return combination.len() as u64;
+                    } else {
+                        presses += 1;
+                    }
+                }
+            })
+            .sum(),
+    )
 }
 
 pub fn part_two(input: &str) -> Option<u64> {
