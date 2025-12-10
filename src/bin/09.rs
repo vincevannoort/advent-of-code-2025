@@ -1,4 +1,4 @@
-use advent_of_code::Location;
+use advent_of_code::{Direction, Location};
 use itertools::Itertools;
 
 advent_of_code::solution!(9);
@@ -38,31 +38,42 @@ pub fn part_one(input: &str) -> Option<u64> {
 
 pub fn part_two(input: &str) -> Option<u64> {
     let red_tiles = parse(input);
+    let red_lines: Vec<(Location, Location, Direction)> = red_tiles
+        .clone()
+        .into_iter()
+        .tuple_windows()
+        .map(|(a, b)| {
+            (
+                a,
+                b,
+                if a.x == b.x {
+                    Direction::Right
+                } else {
+                    Direction::Up
+                },
+            )
+        })
+        .collect_vec();
+
     Some(
         red_tiles
             .into_iter()
-            .combinations(3)
-            // TODO: problem not always within loop, do I need to calculate the actual loop?
-            .filter_map(|locations| {
+            .combinations(2)
+            // filter out any squares not within the shape
+            .filter(|locations| {
                 let a = locations.first().unwrap();
-                let b = locations.get(1).unwrap();
-                let c = locations.last().unwrap();
-
-                // a is corner of b and c
-                if a.x == b.x && a.y == c.y || a.y == b.y && a.x == c.x {
-                    return Some(calculate_area(b, c));
+                let b = locations.last().unwrap();
+                let (x1, x2) = if a.x < b.x { (a.x, b.x) } else { (b.x, a.x) };
+                let (y1, y2) = if a.y < b.y { (a.y, b.y) } else { (b.y, a.y) };
+                for x in x1..=x2 {
+                    for y in y1..=y2 {
+                        dbg!((x, y));
+                        // TODO: return false if point is not within shape
+                    }
                 }
-                // b is corner of a and c
-                if b.x == a.x && b.y == c.y || b.y == a.y && b.x == c.x {
-                    return Some(calculate_area(a, c));
-                }
-                // c is corner of a and b
-                if c.x == a.x && c.y == b.y || c.y == a.y && c.x == b.x {
-                    return Some(calculate_area(a, b));
-                }
-
-                None
+                true
             })
+            .map(|locations| calculate_area(locations.first().unwrap(), locations.last().unwrap()))
             .max()
             .unwrap(),
     )
