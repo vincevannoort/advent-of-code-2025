@@ -30,7 +30,37 @@ pub fn part_one(input: &str) -> Option<u64> {
 }
 
 pub fn part_two(input: &str) -> Option<u64> {
-    None
+    let devices = parse(input);
+    let start: String = "svr".to_string();
+    let mid1: String = "fft".to_string();
+    let mid2: String = "dac".to_string();
+    let end: String = "out".to_string();
+    let no_paths: Vec<String> = vec![];
+
+    // start -> mid1 -> mid2 -> end
+    // there are no path from mid2 to mid1, so we do not have to take that into account
+
+    let start_to_mid1 = count_paths(
+        start.clone(),
+        |p| devices.get(p).unwrap_or(&no_paths).clone(),
+        |p| p == &mid1,
+    );
+    let mid1_to_mid2 = count_paths(
+        mid1.clone(),
+        |p| devices.get(p).unwrap_or(&no_paths).clone(),
+        |p| p == &mid2,
+    );
+    let mid2_to_end = count_paths(
+        mid2.clone(),
+        |p| devices.get(p).unwrap_or(&no_paths).clone(),
+        |p| p == &end,
+    );
+
+    Some(
+        (start_to_mid1 * mid1_to_mid2 * mid2_to_end)
+            .try_into()
+            .unwrap(),
+    )
 }
 
 #[cfg(test)]
@@ -45,7 +75,9 @@ mod tests {
 
     #[test]
     fn test_part_two() {
-        let result = part_two(&advent_of_code::template::read_file("examples", DAY));
-        assert_eq!(result, None);
+        let result = part_two(&advent_of_code::template::read_file_part(
+            "examples", DAY, 1,
+        ));
+        assert_eq!(result, Some(2));
     }
 }
